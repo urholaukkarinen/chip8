@@ -1,0 +1,14 @@
+[package]
+name = "chip8-web"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+chip8-lib = { path = "../chip8-lib" }
+log = "0.4.14"
+console_log = "0.2.0"
+wasm-bindgen = "0.2.79"
+console_error_panic_hook = "0.1.7"

@@ -1,0 +1,15 @@
+[package]
+name = "chip8-lib"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+log = "0.4.14"
+rand = "0.8.5"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2.5", features = ["js"]}
+instant = { version = "0.1.12", features = ["stdweb", "wasm-bindgen"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+instant = { version = "0.1.12" }

@@ -1,0 +1,12 @@
+{
+  "name": "chip8-web",
+  "version": "0.1.0",
+  "files": [
+    "chip8_web_bg.wasm",
+    "chip8_web.js",
+    "chip8_web.d.ts"
+  ],
+  "module": "chip8_web.js",
+  "types": "chip8_web.d.ts",
+  "sideEffects": false
+}

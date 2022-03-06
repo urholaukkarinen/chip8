@@ -1,0 +1,144 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Chip-8</title>
+    <style>
+        body {
+            display: grid;
+            align-items: center;
+            justify-content: center;
+            background: black;
+            font-family: 'Courier New', Monospace, sans-serif;
+            font-size: 14px;
+        }
+
+        canvas {
+            width: 640px;
+            height: 320px;
+            aspect-ratio: auto 640 / 320;
+            border: 2px solid #222;
+            outline: none;
+            left: 50%;
+            top: 50%;
+        }
+
+        #help {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            text-align: right;
+            color: white;
+            margin-right: 20px;
+            display: block;
+            white-space: pre;
+        }
+    </style>
+</head>
+
+<body>
+<canvas id="canvas" tabindex='1'></canvas>
+
+<div id="help">
+    Load a rom with drag & drop
+
+    Input:
+    1 2 3 C
+    4 5 6 D
+    7 8 9 E
+    A 0 B F
+</div>
+
+<script type="module">
+    import init, { Chip8 } from './chip8_web.js';
+
+    let wasm;
+    let wasmMemory;
+
+    async function loadFile(ev) {
+        if (ev.dataTransfer.items) {
+            if (ev.dataTransfer.items.length === 1) {
+                const file = ev.dataTransfer.items[0].getAsFile();
+                const buf = await file.arrayBuffer();
+                return new Uint8Array(buf, 0, buf.byteLength);
+            }
+        }
+
+        return undefined;
+    }
+
+    function onDragOver(ev) {
+        ev.preventDefault();
+        const canvas = document.getElementById("canvas");
+        canvas.style.outline = "1px solid white";
+    }
+
+    function onDragLeave() {
+        const canvas = document.getElementById("canvas");
+        canvas.style.outline = "none";
+    }
+
+    async function run() {
+        wasm = await init();
+        const chip8 = Chip8.new()
+
+        document.ondrop = async (ev) => {
+            ev.preventDefault();
+            const rom = await loadFile(ev);
+            if (rom !== undefined) {
+                try {
+                    chip8.load(rom)
+                } catch (e) {
+                    console.log(e)
+                }
+                wasmMemory = new Uint8Array(wasm.memory.buffer);
+            }
+            onDragLeave()
+        };
+        document.ondragover = onDragOver;
+        document.ondragleave = onDragLeave;
+        document.onkeyup = (key) => {
+            chip8.set_pressed_key(key.key.charCodeAt(0), false);
+        }
+        document.onkeydown = (key) => {
+            chip8.set_pressed_key(key.key.charCodeAt(0), true);
+        }
+
+        const canvasElement = document.querySelector("canvas");
+        const canvasContext = canvasElement.getContext("2d");
+
+        wasmMemory = new Uint8Array(wasm.memory.buffer);
+        canvasContext.canvas.width = 640;
+        canvasContext.canvas.height = 320;
+
+        const drawLoop = () => {
+            chip8.tick();
+
+            const displayDataPtr = chip8.display_data();
+            const displayDataArray = wasmMemory.slice(
+                displayDataPtr,
+                displayDataPtr + 64*32
+            );
+
+            for (let [i, pixel] of displayDataArray.entries()) {
+                const x = (i % 64) * 10;
+                const y = Math.floor(i / 64) * 10;
+
+                if (pixel > 0) {
+                    canvasContext.fillStyle = "white";
+                } else {
+                    canvasContext.fillStyle = "black";
+                }
+                canvasContext.fillRect(x, y, x + 10, y + 10);
+            }
+
+            window.requestAnimationFrame(drawLoop)
+        };
+
+        drawLoop()
+    }
+    run()
+</script>
+</body>
+
+</html>
